@@ -46,6 +46,11 @@ GEMINI_MODEL="${GEMINI_MODEL:-gemini-2.0-flash}"
 MCP_URL="${MCP_URL:-https://iab-docs.apti.jp/mcp}"
 BUILD_SERVICE_ACCOUNT="${BUILD_SERVICE_ACCOUNT:-}"
 
+# Convert email format to full path format for --build-service-account
+if [[ -n "$BUILD_SERVICE_ACCOUNT" && "$BUILD_SERVICE_ACCOUNT" != projects/* ]]; then
+  BUILD_SERVICE_ACCOUNT="projects/${PROJECT_ID}/serviceAccounts/${BUILD_SERVICE_ACCOUNT}"
+fi
+
 # Service account names
 INGEST_SA="slack-ingest-sa"
 WORKER_SA="slack-worker-sa"
