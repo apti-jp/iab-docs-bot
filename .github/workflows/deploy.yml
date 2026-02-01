@@ -39,6 +39,7 @@ jobs:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           SLACK_SIGNING_SECRET: ${{ secrets.SLACK_SIGNING_SECRET }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          BUILD_SERVICE_ACCOUNT: ${{ secrets.BUILD_SERVICE_ACCOUNT || secrets.DEPLOY_SERVICE_ACCOUNT }}
         run: |
           cat <<EOF > infra/.env
           GCP_PROJECT=${GCP_PROJECT}
@@ -49,6 +50,7 @@ jobs:
           SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
           SLACK_SIGNING_SECRET=${SLACK_SIGNING_SECRET}
           GEMINI_API_KEY=${GEMINI_API_KEY}
+          BUILD_SERVICE_ACCOUNT=${BUILD_SERVICE_ACCOUNT}
           EOF
 
       - name: Bootstrap GCP (enable APIs, IAM, topics)

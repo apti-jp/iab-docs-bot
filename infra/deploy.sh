@@ -44,6 +44,7 @@ REGION="${GCP_REGION:-asia-northeast1}"
 TOPIC="${PUBSUB_TOPIC:-slack-events}"
 GEMINI_MODEL="${GEMINI_MODEL:-gemini-2.0-flash}"
 MCP_URL="${MCP_URL:-https://iab-docs.apti.jp/mcp}"
+BUILD_SERVICE_ACCOUNT="${BUILD_SERVICE_ACCOUNT:-}"
 
 # Service account names
 INGEST_SA="slack-ingest-sa"
@@ -172,6 +173,7 @@ deploy_ingest() {
     --source . \
     --allow-unauthenticated \
     --service-account "${INGEST_SA}@${PROJECT_ID}.iam.gserviceaccount.com" \
+    ${BUILD_SERVICE_ACCOUNT:+--build-service-account "$BUILD_SERVICE_ACCOUNT"} \
     --set-env-vars "PUBSUB_TOPIC=$TOPIC" \
     --memory 256Mi \
     --cpu 1 \
@@ -198,6 +200,7 @@ deploy_worker() {
     --source . \
     --no-allow-unauthenticated \
     --service-account "${WORKER_SA}@${PROJECT_ID}.iam.gserviceaccount.com" \
+    ${BUILD_SERVICE_ACCOUNT:+--build-service-account "$BUILD_SERVICE_ACCOUNT"} \
     --set-env-vars "GCP_PROJECT=$PROJECT_ID,GEMINI_MODEL=$GEMINI_MODEL,MCP_URL=$MCP_URL" \
     --memory 512Mi \
     --cpu 1 \
