@@ -1,27 +1,40 @@
 import { GoogleGenerativeAI, Tool } from '@google/generative-ai';
 import { callMcpTool, getGeminiTools } from './mcp.js';
+import { getSkillContext } from './skill.js';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 const MODEL_NAME = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
 
 let genAI: GoogleGenerativeAI | null = null;
 
-const SYSTEM_PROMPT = `あなたは IAB Tech Lab ドキュメントの質問に答えるアシスタントです。
+function buildSystemPrompt(skillMd: string): string {
+  const skillSection = skillMd
+    ? `\n## ドキュメントの能力と範囲
 
+以下は、このドキュメントがカバーする規格・能力の概要です。質問に回答する際、この情報を参考に適切なドキュメントを検索してください。
+
+${skillMd}
+`
+    : '';
+
+  return `あなたは IAB Tech Lab ドキュメントの質問に答えるアシスタントです。
+${skillSection}
 ## ルール
 1. 利用可能なツール検索ツールを使用して、ドキュメントを検索し、質問に答えてください。
-2. ユーザーの質問に対して、適切なキーワードで検索を行ってください。
+2. ユーザーの質問に対して、${skillMd ? '上記の能力と範囲を参考に、' : ''}適切なキーワードで検索を行ってください。
 3. ツールから得られた情報のみを根拠に回答してください。情報がない場合は正直にそう伝えてください。
 4. 回答は日本語で、簡潔に行ってください。
 5. 回答の末尾に、参照したドキュメントのURLを必ずリストアップしてください。
+6. 複数の規格にまたがる質問の場合、関連する全ての規格から情報を収集してから回答してください。
 `;
+}
 
 interface GenerateAnswerResult {
   answer: string;
   success: boolean;
 }
 
-function getModel(tools: Tool[]) {
+function getModel(tools: Tool[], systemInstruction: string) {
   if (!GEMINI_API_KEY) {
     throw new Error('GEMINI_API_KEY is not set');
   }
@@ -32,7 +45,7 @@ function getModel(tools: Tool[]) {
 
   return genAI.getGenerativeModel({
     model: MODEL_NAME,
-    systemInstruction: SYSTEM_PROMPT,
+    systemInstruction,
     tools: tools
   });
 }
@@ -51,8 +64,12 @@ export async function generateAnswer(question: string): Promise<GenerateAnswerRe
     const toolDeclarations = await getGeminiTools();
     const tools: Tool[] = [{ functionDeclarations: toolDeclarations }];
 
+    // Build dynamic system prompt with skill.md
+    const skillMd = await getSkillContext();
+    const systemPrompt = buildSystemPrompt(skillMd);
+
     // Initialize model with tools
-    const model = getModel(tools);
+    const model = getModel(tools, systemPrompt);
 
     const chat = model.startChat({
       history: [],
